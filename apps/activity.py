@@ -1,4 +1,6 @@
-import datetime, pathlib
+import datetime, os 
+
+from . import notes
 
 from jinja2 import Environment, FileSystemLoader
 
@@ -34,16 +36,56 @@ def new(args):
                 done = True
             except ValueError:
                 try:
-                    start_time = datetime.datetime.strptime(start_time, "%d-%m%y %H:%M:%S").time()
+                    start_time = datetime.datetime.strptime(start_time, "%d-%m-%y %H:%M:%S").time()
                     done = True
                 except ValueError:
                     print('Please enter date/time format as either dd-mm-yy HH:MM:SS or HH:MM:SS, seconds are optional')
+
+    start_time = start_time.strftime("%Y-%m-%d %H:%M")
 
     tags = input('Task tags (comma separated): ')
     if len(tags) > 0:
         tags = tags.split(',')
 
     note = template.render(name=name, start_time=start_time, tags=tags)
-    with open(pathlib.join('notes', str(start_time) + name + '.md'), 'w') as f:
+    with open(os.path.join('notes', 'activity', start_time + " " + name + '.md'), 'w') as f:
         f.write(note)
-        
+
+    edit()
+
+def done(args):
+    files = notes.get_files(os.path.join('notes', 'activity')) 
+    if len(files) == 0:
+        return
+    file_dict = {}
+    for file in files:
+        file_dict[os.path.getmtime(file)] = file
+
+
+    times = [t for t in file_dict]
+    times.sort(reverse=True)
+
+    for t in times:
+        note = notes.Note(str(file_dict[t]))
+        if 'end_time' not in note.metadata:
+            finished = input(f'Task { note.metadata["name"] } finished? (y/n): ')
+            if finished == 'y':
+                note.metadata['end_time'] = datetime.datetime.now().replace(microsecond = 0)
+                note.save()
+                break
+
+
+def edit(args):
+    files = notes.get_files(os.path.join('notes', 'activity')) 
+    if len(files) == 0:
+        return
+    file_dict = {}
+    for file in files:
+        file_dict[os.path.getmtime(file)] = file
+
+
+    times = [t for t in file_dict]
+    times.sort(reverse=True)
+    import subprocess
+    subprocess.call(['xdg-open', str(file_dict[times[0]])])
+    
