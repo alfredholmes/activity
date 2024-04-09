@@ -7,6 +7,11 @@ def get_files(directory, extension=".md"):
     files = [f for f in files if '/.' not in str(f)]
     return files
 
+class IndentDumper(yaml.Dumper):
+    def increase_indent(self, flow=False, indentless=False):
+        return super(IndentDumper, self).increase_indent(flow, False)
+
+
 class Note:
     def __init__(self, file_path):
         self.path = file_path
@@ -32,7 +37,7 @@ class Note:
             return yaml_data, document_body
 
     def save(self):
-        document = "---\n" + yaml.dump(self.metadata) + "---\n"
+        document = "---\n" + yaml.dump(self.metadata, sort_keys=False, Dumper=IndentDumper) + "---\n"
         document += self.document_body.split('---\n')[-1]
         with open(self.path, "w") as f:
             f.write(document)
