@@ -1,8 +1,7 @@
 import datetime, os 
 
-from . import notes
+from . import notes, template
 
-from jinja2 import Environment, FileSystemLoader
 
 def run(args):
     try: 
@@ -15,8 +14,6 @@ def run(args):
     method(args)
 
 def new(args):
-    env = Environment(loader=FileSystemLoader('template/'),trim_blocks=True, lstrip_blocks=True)
-    template = env.get_template("activity.md")
     try:
         name = args[3]
     except IndexError:
@@ -47,7 +44,7 @@ def new(args):
     if len(tags) > 0:
         tags = tags.split(',')
 
-    note = template.render(name=name, start_time=start_time, tags=tags)
+    note = template.generate_from_template('activity.md', name=name, start_time=start_time, tags=tags)
     with open(os.path.join('notes', 'activity', start_time + " " + name + '.md'), 'w') as f:
         f.write(note)
 
@@ -105,14 +102,16 @@ def time_spent(args):
 
 
         note = notes.Note(file)
-        if 'end_time' not in note.metadata:
-            continue
         try:
             start_time = datetime.datetime.strptime(note.metadata['start_time'], "%Y-%m-%d %H:%M")
         except ValueError:
             start_time = datetime.datetime.strptime(note.metadata['start_time'], "%Y-%m-%d %H:%M:%S")
         except TypeError:
             start_time = note.metadata['start_time']
+        if 'end_time' not in note.metadata:
+            end_time = datetime.datetime.now()
+            time += end_time - start_time
+            continue
         try:
             end_time = datetime.datetime.strptime(note.metadata['end_time'], "%Y-%m-%d %H:%M")
         except ValueError:
@@ -123,3 +122,50 @@ def time_spent(args):
         time += end_time - start_time
 
     print(time)
+
+
+def weekly_total(args):
+    today = datetime.date.today()
+    start = today - datetime.timedelta(days = today.weekday())
+    week_days = [(start + datetime.timedelta(days = i)).strftime('%Y-%m-%d') for i in range(6)]
+
+    tags = args[3:]
+
+    
+    files = notes.get_files(os.path.join('notes', 'activity'))
+
+    time = datetime.timedelta()
+
+    for file in files:
+        in_week = False
+        for day in week_days:
+            if day in str(file):
+                in_week = True
+
+
+
+        if not in_week:
+            continue
+
+        correct_tags = True
+
+        note = notes.Note(file) 
+        for tag in tags:
+            if tag not in note.metadata['tags']:
+                correct_tags = False
+
+        if not correct_tags:
+            continue
+
+        try:
+            end_time = note.metadata['end_time']
+        except KeyError:
+            end_time = datetime.datetime.now()
+            
+        start_time = note.metadata['start_time']
+        time += end_time - start_time
+
+    print(time) 
+
+
+
