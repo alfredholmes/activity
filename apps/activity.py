@@ -127,7 +127,7 @@ def time_spent(args):
 def weekly_total(args):
     today = datetime.date.today()
     start = today - datetime.timedelta(days = today.weekday())
-    week_days = [(start + datetime.timedelta(days = i)).strftime('%Y-%m-%d') for i in range(6)]
+    week_days = [(start + datetime.timedelta(days = i)).strftime('%Y-%m-%d') for i in range(7)]
 
     tags = args[3:]
 
