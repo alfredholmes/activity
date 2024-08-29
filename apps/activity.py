@@ -124,8 +124,9 @@ def time_spent(args):
     print(time)
 
 
-def weekly_total(args):
-    today = datetime.date.today()
+def weekly_total(args, today  = None):
+    if today is None:
+        today = datetime.date.today()
     start = today - datetime.timedelta(days = today.weekday())
     week_days = [(start + datetime.timedelta(days = i)).strftime('%Y-%m-%d') for i in range(7)]
 
@@ -166,6 +167,30 @@ def weekly_total(args):
         time += end_time - start_time
 
     print(time) 
+    return time
+
+def weekly_totals(args, start = None, end=None):
+    import matplotlib.pyplot as plt
+    
+    if end is None:
+        end = datetime.date.today()
+    
+    if start is None:
+        start = end - datetime.timedelta(days=end.timetuple().tm_yday)
+
+    days = (end - start).days
+    weeks = []
+    hours = []
+    for i in range(0, days + 7, 7):
+        week = start + datetime.timedelta(days = i)
+        print(week)
+        total = weekly_total(args, week)
+        weeks.append(week)
+        hours.append(total.days * 24 + total.seconds / (60 * 60))
+
+    plt.bar(weeks, hours, width=datetime.timedelta(days=7) - datetime.timedelta(seconds=10000))
+    plt.show()
+
 
 
 
