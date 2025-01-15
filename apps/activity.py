@@ -45,10 +45,20 @@ def new(args):
         tags = tags.split(',')
 
     note = template.generate_from_template('activity.md', name=name, start_time=start_time, tags=tags)
-    with open(os.path.join('notes', 'activity', start_time + " " + name + '.md'), 'w') as f:
+    file_path = os.path.join('notes', 'activity', start_time + " " + name + '.md') 
+    with open(file_path, 'w') as f:
         f.write(note)
 
     edit(args)
+
+    note = notes.Note(file_path)
+    taskdone(args, note)
+
+def taskdone(args, note):
+    if 'end_time' not in note.metadata:
+        note.metadata['end_time'] = datetime.datetime.now().replace(microsecond = 0)
+        note.save()
+
 
 def done(args):
     files = notes.get_files(os.path.join('notes', 'activity')) 
@@ -84,7 +94,7 @@ def edit(args):
     times = [t for t in file_dict]
     times.sort(reverse=True)
     import subprocess
-    subprocess.call(['xdg-open', str(file_dict[times[0]])])
+    subprocess.call(['nvim', str(file_dict[times[0]])])
    
 
 def time_spent(args):
@@ -147,6 +157,8 @@ def weekly_total(args, today  = None):
 
         if not in_week:
             continue
+
+        print(file)
 
         correct_tags = True
 
